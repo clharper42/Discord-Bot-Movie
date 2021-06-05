@@ -2,17 +2,22 @@ import discord
 import random
 import tmdbsimple as tmdb
 import os
+from discord_slash import SlashCommand
 
 tmdb.API_KEY = os.environ['APIKEY']
-bot = commands.Bot(command_prefix='!')
+
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 bot.remove_command('help')
+slash = SlashCommand(bot, sync_commands=True)
+
 disc = tmdb.Discover()
 imgurl = "https://www.themoviedb.org/t/p/w600_and_h900_bestv2"
 linkurl = "https://www.themoviedb.org/movie/"
 
-@bot.command()
+@slash.slash(name="ranmov",
+             description="Random movie",
+             guild_ids = ['SERVER IDS HERE'])
 async def ranmov(ctx):
-  channel = bot.get_channel('CHANNEL ID')
   year = random.randint(1970,2021)
   getpgs = disc.movie(primary_release_year=year, sort_by= "vote_count.desc", with_original_language = 'en', vote_count_gte= 10)
 
@@ -39,11 +44,12 @@ async def ranmov(ctx):
   embed.add_field(name="Link", value=linkurl+str(themoveinfo['id'])+themoveinfo['title'].replace(" ", "-"))
   embed.add_field(name="Story:", value=themoveinfo['overview'], inline=False)
   embed.set_image(url=imgurl+themoveinfo['poster_path'])
-  await channel.send(embed=embed)
+  await ctx.send(embed=embed)
 
-@bot.command()
+@slash.slash(name="recmov",
+             description="Three movie recommendations when given title. Multi word titles are done like so \"Spy Kids\"",
+             guild_ids = ['SERVER IDS HERE'])
 async def recmov(ctx, query):
-  channel = bot.get_channel('CHANNEL ID')
   try:
     movsearch =  tmdb.Search().movie(query=query)['results'][0]
     movrecs = tmdb.Movies(movsearch['id']).recommendations()['results'][:3]
@@ -57,13 +63,14 @@ async def recmov(ctx, query):
     embed.add_field(name="Name:", value=movrecs[2]['title'], inline=False)
     embed.add_field(name="Link", value=linkurl+str(movrecs[2]['id'])+movrecs[2]['title'].replace(" ", "-"))
     embed.set_image(url=imgurl+movsearch['poster_path'])
-    await channel.send(embed=embed)
+    await ctx.send(embed=embed)
   except:
-    await channel.send("Bad Title")
+    await ctx.send("Bad Title")
 
-@bot.command()
+@slash.slash(name="getmov",
+             description="Info about movie when given title. Multi word titles are done like so \"Spy Kids\"",
+             guild_ids = ['SERVER IDS HERE'])
 async def getmov(ctx, query):
-  channel = bot.get_channel('CHANNEL ID')
   try:
     movsearch =  tmdb.Search().movie(query=query)['results'][0]
 
@@ -86,9 +93,9 @@ async def getmov(ctx, query):
     embed.add_field(name="Link", value=linkurl+str(themoveinfo['id'])+themoveinfo['title'].replace(" ", "-"))
     embed.add_field(name="Story:", value=themoveinfo['overview'], inline=False)
     embed.set_image(url=imgurl+themoveinfo['poster_path'])
-    await channel.send(embed=embed)
+    await ctx.send(embed=embed)
   except:
-    await channel.send("Bad Title")
+    await ctx.send("Bad Title")
 
     
   bot.run('DISCORD TOKEN')
